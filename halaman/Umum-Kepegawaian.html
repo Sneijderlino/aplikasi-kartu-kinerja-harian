@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kartu Kinerja Harian | Umum Kepegawaian</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+    <!-- JSZip + FileSaver for downloading multiple PDFs as a single ZIP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  </head>
+  <body onload="initializeApp();">
+    <input type="hidden" id="page-id" value="Umum-Kepegawaian" />
+    <!-- Welcome screen removed for this bidang page (opens directly to the app) -->
+
+    <div id="kkh-app">
+      <div class="app-container">
+        <a
+          id="backToWelcome"
+          class="action-button"
+          href="/index.html"
+          style="
+            background-color: var(--danger-color);
+            color: white;
+            margin-bottom: 20px;
+            display: inline-block;
+            text-decoration: none;
+          "
+        >
+          ⬅️ Kembali ke Halaman Utama
+        </a>
+
+        <div class="header-title">
+          <h2>Kartu Kinerja Harian (KKH)-Umum Kepegawaian</h2>
+          <p>DINAS SATUAN POLISI PAMONG PRAJA DAN PEMADAM KEBAKARAN</p>
+        </div>
+
+        <div class="form-section">
+          <div class="form-group">
+            <label for="nama">Nama Pegawai:</label>
+            <input type="text" id="nama" value="" required />
+          </div>
+          <div class="form-group">
+            <label for="nip">NIP/PPPK:</label>
+            <input type="text" id="nip" value="" required />
+          </div>
+          <div class="form-group">
+            <label for="bidang">Jabatan/Bidang:</label>
+            <input type="text" id="bidang" value="" required />
+          </div>
+          <div class="form-group">
+            <label for="hari_tgl">Hari/Tanggal:</label>
+            <input type="date" id="hari_tgl" required />
+          </div>
+        </div>
+
+        <h3>📝 Detail Uraian Kinerja Harian</h3>
+        <div class="table-responsive">
+          <table id="kinerja-table">
+            <thead>
+              <tr>
+                <th style="width: 5%">No</th>
+                <th style="width: 15%">Waktu/Durasi</th>
+                <th style="width: 45%">Uraian Pekerjaan</th>
+                <th style="width: 12%">Status</th>
+                <th style="width: 8%">Verifikasi</th>
+                <th style="width: 15%">Foto</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="button-group">
+          <button id="addRow" class="action-button">
+            ➕ Tambah Baris Kinerja
+          </button>
+          <button
+            id="saveForm"
+            class="action-button"
+            style="background-color: #17a2b8; color: white"
+          >
+            💾 Simpan Kinerja
+          </button>
+          <button id="downloadPdf" class="action-button">
+            ⬇️ Unduh KKH sebagai PDF
+          </button>
+
+          <button
+            id="downloadAll"
+            class="action-button"
+            style="background-color: #6f42c1; color: white"
+          >
+            📦 Download Semua
+          </button>
+        </div>
+
+        <!-- Mobile Floating Action Buttons removed to avoid jumpy UI on Android -->
+
+        <div class="history-section">
+          <p style="font-weight: bold; margin-top: 0">
+            ⚠️ Riwayat ini tersimpan di browser Anda secara lokal.
+          </p>
+
+          <ul id="history-list">
+            <li>Tidak ada data tersimpan.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div id="kkh-output">
+      <div class="pdf-header">
+        <div class="header-with-logo">
+          <img
+            src="/img/logo.png"
+            alt="Logo"
+            class="header-logo"
+            crossorigin="anonymous"
+          />
+          <div class="header-text">
+            <p>PEMERINTAH KABUPATEN MALUKU BARAT DAYA</p>
+            <p class="instansi-name">SATUAN POLISI PAMONG PRAJA DAN</p>
+            <p class="instansi-name">PEMADAM KEBAKAR</p>
+          </div>
+        </div>
+        <p class="line"></p>
+        <p class="kkh-title">KARTU KINERJA HARIAN</p>
+      </div>
+
+      <div class="pdf-detail-pegawai">
+        <div class="detail-label-kkh">NAMA</div>
+        <div class="detail-value-kkh">: <span id="out-nama"></span></div>
+        <div class="detail-label-kkh">NIP/PPPK</div>
+        <div class="detail-value-kkh">: <span id="out-nip"></span></div>
+        <div class="detail-label-kkh">BIDANG</div>
+        <div class="detail-value-kkh">: <span id="out-bidang"></span></div>
+        <div class="detail-label-kkh">HARI/TGL</div>
+        <div class="detail-value-kkh">: <span id="out-hari_tgl"></span></div>
+      </div>
+
+      <table id="pdf-table">
+        <thead>
+          <tr>
+            <th style="width: 5%">No</th>
+            <th style="width: 15%">Waktu</th>
+            <th style="width: 45%">Uraian Kerja</th>
+            <th style="width: 12%">Status</th>
+            <th style="width: 8%">Cek</th>
+            <th style="width: 20%">Foto</th>
+          </tr>
+        </thead>
+        <tbody id="pdf-table-body"></tbody>
+      </table>
+
+      <div class="signature-area">
+        <div style="flex: 1"></div>
+
+        <div class="signature-block-kkh">
+          <p>Kasubag Umum dan Kepegawaian</p>
+
+          <!-- Barcode -->
+          <img
+            id="signature-img"
+            src="/ttd/TTD-kumpeg.jpg"
+            alt="TTD Kasubag"
+            style="display: block; margin: 8px auto; width: 120px; height: auto"
+            crossorigin="anonymous"
+          />
+          <div class="spacer"></div>
+          <p class="nama">KAREL MAUPULA, S.Ag</p>
+          <p>NIP. 19761209 201001 1 009</p>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
